@@ -1,41 +1,56 @@
 import time
 from pynostr.event import Event
 from typing import Optional
-from audgit.get_repo_files import get_repo_files
+from audgit.get_repo_files import get_file_tree, get_file_contents, print_file_tree
 import requests
 import json
+import os
+from dotenv import load_dotenv
+
+# load the .env file. By default, it looks for the .env file in the same directory as the script
+# If your .env file is one directory up, you need to specify the path
+load_dotenv("/Users/kody/Documents/github/python/audgit/.env")
+
+
+# Load the token from an environment variable
+TOKEN = os.getenv("GITHUB_TOKEN")
+print("TOKEN: ", TOKEN)
+
+# Define the headers to be used in the requests
+headers = {
+    "Accept": "application/vnd.github.v3+json",
+    "Authorization": f"token {TOKEN}",
+}
 
 
 def code_review(issue_url: str):
-    """
-    Expected input is a GitHub issue URL.
-    """
-
-    # Parse the issue url to get owner, repo and issue number
     parts = issue_url.split("/")
     issue_number = parts[-1]
     repo = parts[-3]
     owner = parts[-4]
 
-    # Construct the GitHub API url
     api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}"
-
-    # use the github api to get the issue
-    headers = {"Accept": "application/vnd.github.v3+json"}
     response = requests.get(api_url, headers=headers)
 
-    # Ensure the request was successful
     if response.status_code != 200:
         raise Exception(f"Error: API request status {response.status_code}")
 
     issue = response.json()
-    print("issue: ", json.dumps(issue, indent=4))
+    print("Got issue...")
 
-    # wait for a second
-    time.sleep(1)
+    repo_url = f"https://github.com/{owner}/{repo}.git"
+    file_paths = get_file_tree(repo_url)
+    print_file_tree(file_paths)
+    time.sleep(3)
 
-    # After getting the issue, get the contents of the repo
-    get_repo_files(owner, repo)
+    file_contents = get_file_contents(owner, repo, file_paths)
+
+    # Print file paths and contents
+    for path, content in file_contents.items():
+        print(f"Path: {path}")
+        print(
+            f"Content: {content[:100]}..."
+        )  # Print only the first 100 characters for brevity
 
     return "OK"
 

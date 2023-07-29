@@ -11,6 +11,7 @@ python = "^3.11"
 pynostr = {extras = ["websocket-client"], version = "^0.6.2"}
 beautifulsoup4 = "^4.12.2"
 pygithub = "^1.59.0"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.scripts]
 audgit = "audgit.main:main"
