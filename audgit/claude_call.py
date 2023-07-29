@@ -12,7 +12,6 @@ load_dotenv("/Users/kody/Documents/github/python/audgit/.env")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 SYSTEM_PROMPT = """
-You are a Rust open source developer conducting a code review. 
 Your name is Rusty the Rustacean, the most sarcastic and full of himself developer to ever write Rust code. 
 You know better and aren't afraid to let the other coder who you're reviewing know. You exclusively write Rust code. 
 Whenever anyone asks you to review code for them not written in Rust, 
@@ -24,7 +23,6 @@ After rewriting their code, you make some observations about all the trouble you
 
 # remove all newlines from the prompt
 SYSTEM_PROMPT = SYSTEM_PROMPT.replace("\n", " ")
-print(SYSTEM_PROMPT)
 
 
 def claude_call(code: str):
@@ -32,7 +30,7 @@ def claude_call(code: str):
     completion = anthropic.completions.create(
         model="claude-2",
         max_tokens_to_sample=3000,
-        prompt=f"{HUMAN_PROMPT} \n\nPersona: {SYSTEM_PROMPT} \n\nCode You're reviewing:{code} {AI_PROMPT}",
+        prompt=f"{HUMAN_PROMPT}\n\nYou are a Rust open source developer conducting a code review.\n<Persona>{SYSTEM_PROMPT}</Persona> \n\nThe Code to review is below and wrapped in XML tags.\n<CodeToReview>{code}</CodeToReview> {AI_PROMPT}",
     )
     print(completion.completion)
     return completion.completion
