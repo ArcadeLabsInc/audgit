@@ -9,6 +9,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 
+[tool.poetry.scripts]
+audgit = "src.main:main"
 
 [build-system]
 requires = ["poetry-core"]
