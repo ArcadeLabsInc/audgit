@@ -28,9 +28,7 @@ def main():
     if args.debug:
         log.setLevel(logging.DEBUG)
 
-    conn = supabase_conn()
-
-    mon = create_monitor(conn, args.debug)
+    mon = Monitor(debug=args.debug)
 
     if args.start:
         mon.start()
@@ -38,11 +36,6 @@ def main():
         mon.list()
     if args.one:
         mon.one()
-
-
-def create_monitor(conn: AugmentedClient, debug: bool):
-    mon = Monitor(conn=conn, debug=debug)
-    return mon
 
 
 if __name__ == "__main__":
