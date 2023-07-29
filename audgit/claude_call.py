@@ -1,7 +1,6 @@
-import requests
-import os
-from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 
+from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+import os
 from dotenv import load_dotenv
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
