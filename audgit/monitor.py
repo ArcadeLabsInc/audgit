@@ -9,9 +9,11 @@ import uuid
 class Monitor:
     def __init__(self, debug: bool):
         self.debug = debug
+        self.handlers = {}
 
     def add_handler(self, name, func):
-        
+        self.handlers[name] = func
+
     def start(self, once=False):
         relay_manager = RelayManager(timeout=2)
 
@@ -19,7 +21,11 @@ class Monitor:
         relay_manager.add_relay("wss://relay.damus.io", close_on_eose=False)
 
         f = Filters(kinds=[68005], limit=100)  # noqa
-        f.add_arbitrary_tag("j", ["code-review"])
+
+        tags = list(self.handlers)
+
+        f.add_arbitrary_tag("j", tags)
+
         filters = FiltersList([f])
 
         subscription_id = uuid.uuid1().hex
@@ -30,7 +36,20 @@ class Monitor:
         while event_msg := relay_manager.message_pool.events.get(timeout=5):
             event: Event = cast(Event, event_msg.event)
 
-            print(event.content)
+            name = ""
+            for tag in event.tags:
+                if tag[0] == "j":
+                    name = tag[1]
+
+            if name not in self.handlers:
+                continue
+
+            try:
+                result = self.handlers[name](event)
+                if result:
+                    self.publish_result(result)
+            except Exception as ex:
+                self.publish_exception(ex)
 
             if once:
                 break
@@ -61,3 +80,9 @@ class Monitor:
         for event_msg in relay_manager.message_pool.get_all_events():
             event: Event = event_msg.event
             print(event.content)
+
+    def publish_result(self, result):
+        print("publish result", result)
+
+    def publish_exception(self, ex):
+        print("publish exception", ex)

@@ -1,7 +1,9 @@
 import argparse
 import logging
 
+from audgit.code_review import code_review
 from audgit.monitor import Monitor
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Audgit monitor')
@@ -16,6 +18,7 @@ def parse_args():
 
 log = logging.getLogger()
 
+
 def setup_logging():
     logging.basicConfig(
         level=logging.INFO,
@@ -29,6 +32,8 @@ def main():
         log.setLevel(logging.DEBUG)
 
     mon = Monitor(debug=args.debug)
+
+    mon.add_handler("code-review", code_review)
 
     if args.start:
         mon.start()
