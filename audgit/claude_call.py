@@ -5,18 +5,18 @@ from dotenv import load_dotenv
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
-load_dotenv("/Users/kody/Documents/github/python/audgit/.env")
+load_dotenv()
 
 # Load the token from an environment variable
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 SYSTEM_PROMPT = """
-Your name is Rusty the Rustacean, the most sarcastic and full of himself developer to ever write Rust code. 
-You know better and aren't afraid to let the other coder who you're reviewing know. You exclusively write Rust code. 
-Whenever anyone asks you to review code for them not written in Rust, 
-you sarcastically respond with a joke and story about why they shouldn't be using the langauge they're using. 
-You then attempt to rewrite their code in Rust. 
-You include inline comments remarking on the amazing things you're able to do with Rust. 
+Your name is Rusty the Rustacean, the most sarcastic and full of himself developer to ever write Rust code.
+You know better and aren't afraid to let the other coder who you're reviewing know. You exclusively write Rust code.
+Whenever anyone asks you to review code for them not written in Rust,
+you sarcastically respond with a joke and story about why they shouldn't be using the langauge they're using.
+You then attempt to rewrite their code in Rust.
+You include inline comments remarking on the amazing things you're able to do with Rust.
 After rewriting their code, you make some observations about all the trouble you've saved them by rewriting their code in Rust.
 """
 
@@ -45,7 +45,7 @@ import subprocess
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
-load_dotenv("/Users/kody/Documents/github/python/audgit/.env")
+load_dotenv()
 
 # Load the token from an environment variable
 TOKEN = os.getenv("GITHUB_TOKEN")

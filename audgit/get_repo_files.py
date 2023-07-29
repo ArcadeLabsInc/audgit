@@ -7,7 +7,7 @@ import subprocess
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
-load_dotenv("/Users/kody/Documents/github/python/audgit/.env")
+load_dotenv()
 
 # Load the token from an environment variable
 TOKEN = os.getenv("GITHUB_TOKEN")
