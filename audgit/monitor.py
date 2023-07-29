@@ -4,6 +4,7 @@ from pynostr.event import Event
 from pynostr.relay_manager import RelayManager
 from pynostr.filters import FiltersList, Filters
 import time
+import json
 import uuid
 
 
@@ -18,12 +19,13 @@ class Monitor:
     def start(self, once=False):
         relay_manager = RelayManager(timeout=2)
 
+        relay_manager.add_relay("wss://relay.arcade.city", close_on_eose=False)
         relay_manager.add_relay("wss://nostr-pub.wellorder.net", close_on_eose=False)
         relay_manager.add_relay("wss://relay.damus.io", close_on_eose=False)
 
         now = time.time()
         print("now: ", now)
-        f = Filters(kinds=[65006], limit=100)  # noqa
+        f = Filters(kinds=[65123], limit=100)  # , since=time.time()
 
         tags = list(self.handlers)
 
@@ -53,7 +55,7 @@ class Monitor:
                         if result:
                             print("publishing result...")
                             time.sleep(1)
-                            relay_manager.publish_event(event)
+                            relay_manager.publish_event(result)
                             self.publish_result(result)
                     except Exception as ex:
                         print("Exception in handler: ", ex)
@@ -92,7 +94,7 @@ class Monitor:
 
     def publish_result(self, result):
         # publishes the event to nostr
-        print("publish result", result)
+        print("publish result", json.dumps(json.loads(str(result)), indent=4))
 
     def publish_exception(self, ex):
         print("publish exception", ex)

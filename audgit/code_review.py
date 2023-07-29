@@ -76,6 +76,7 @@ def code_review(event: Event):
     event = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
+        tags=[["status", "success"]],  # add a tag to indicate the status of the job
         pubkey=private_key.public_key.hex(),  # assuming you want the hex value of the public key
     )
     print("Created event...")
@@ -83,7 +84,7 @@ def code_review(event: Event):
     print("Signing event...")
     # sign event
     event.sign(private_key.hex())
-    print("Signed event: " + str(event))
+    print("Signed event: ")# + str(event)
 
     # send event
     return event
