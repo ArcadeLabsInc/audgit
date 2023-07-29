@@ -2,7 +2,7 @@
 name = "audgit"
 version = "0.1.0"
 description = ""
-authors = ["Christopher David <chris@arcadelabs.co>"]
+authors = ["Christopher David <chris@arcadelabs.co>", "Erik Aronesty <erik@q32.com>"]
 license = "MIT"
 readme = "README.md"
 
@@ -10,7 +10,7 @@ readme = "README.md"
 python = "^3.11"
 
 [tool.poetry.scripts]
-audgit = "src.main:main"
+audgit = "audgit.main:main"
 
 [build-system]
 requires = ["poetry-core"]
