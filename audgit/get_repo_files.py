@@ -54,28 +54,24 @@ def get_file_tree(repo_url: str, local_path: str = "/tmp/repo"):
     return file_paths
 
 
-def get_file_contents(owner: str, repo: str, file_paths: list):
+def get_file_contents(local_path: str, file_paths: list):
     """
-    This function uses GitHub API to get the contents of each file in a repository.
+    This function opens each file in a repository and reads its contents.
     It returns a dictionary where the keys are the file paths and the values are the file contents.
     """
     # Dictionary to hold the file contents
     contents = {}
 
     for file_path in file_paths:
-        api_endpoint = (
-            f"https://api.github.com/repos/{owner}/{repo}/contents/{file_path}"
-        )
+        # Combine the base local path with the file path to get the full path
+        full_path = os.path.join(local_path, file_path)
 
-        response = requests.get(api_endpoint, headers=headers)
-
-        # Ensure the request was successful
-        if response.status_code != 200:
-            raise Exception(f"Error: API request status {response.status_code}")
-
-        file = response.json()
-        # Decode the file content and store it in the dictionary
-        contents[file_path] = base64.b64decode(file["content"]).decode("utf-8")
+        try:
+            with open(full_path, "r") as file:
+                # Read the file content and store it in the dictionary
+                contents[file_path] = file.read()
+        except Exception as e:
+            print(f"Error reading file {full_path}: {e}")
 
     return contents
 
@@ -94,17 +90,17 @@ def print_file_tree(file_paths: list):
                 current_level[part] = {}
             current_level = current_level[part]
 
-    def print_tree(current_level: dict, prefix: str = ""):
-        for part in current_level:
-            new_prefix = os.path.join(prefix, part)
-            print(f"└─ {new_prefix}")
-            if len(current_level[part]) > 0:
-                print_tree(current_level[part], new_prefix)
-
     # def print_tree(current_level: dict, prefix: str = ""):
     #     for part in current_level:
-    #         print(f"{prefix}└─ {part}")
+    #         new_prefix = os.path.join(prefix, part)
+    #         print(f"└─ {new_prefix}")
     #         if len(current_level[part]) > 0:
-    #             print_tree(current_level[part], prefix + "  ")
+    #             print_tree(current_level[part], new_prefix)
+
+    def print_tree(current_level: dict, prefix: str = ""):
+        for part in current_level:
+            print(f"{prefix}└─ {part}")
+            if len(current_level[part]) > 0:
+                print_tree(current_level[part], prefix + "  ")
 
     print_tree(file_tree)

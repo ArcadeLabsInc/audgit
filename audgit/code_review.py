@@ -6,6 +6,7 @@ import requests
 import json
 import os
 from dotenv import load_dotenv
+from pynostr.key import PrivateKey
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
@@ -22,6 +23,8 @@ headers = {
     "Authorization": f"token {TOKEN}",
 }
 
+# Generate a new keypair for the demonstration
+private_key = PrivateKey.from_hex(os.getenv("NOSTR_PRIVKEY"))
 
 def code_review(issue_url: str):
     parts = issue_url.split("/")
@@ -39,20 +42,31 @@ def code_review(issue_url: str):
     print("Got issue...")
 
     repo_url = f"https://github.com/{owner}/{repo}.git"
-    file_paths = get_file_tree(repo_url)
+    local_path = "/tmp/repo"  # Define the local path where the repo is cloned
+    file_paths = get_file_tree(repo_url, local_path)
     print_file_tree(file_paths)
     time.sleep(3)
 
-    file_contents = get_file_contents(owner, repo, file_paths)
+    file_contents = get_file_contents(local_path, file_paths)
 
     # Print file paths and contents
     for path, content in file_contents.items():
         print(f"Path: {path}")
-        print(
-            f"Content: {content[:100]}..."
-        )  # Print only the first 100 characters for brevity
+        # print(
+        #     f"Content: {content[:100]}..."
+        # )  # Print only the first 100 characters for brevity
 
-    return "OK"
+    # convert the file_paths to json and send to the event
+    file_paths_json = json.dumps(file_paths)
+    file_contents_json = json.dumps(file_contents)
 
-
-code_review("https://github.com/fedimint/fedimint/issues/2858")
+    # create the event
+    event = Event(
+        kind=65001,  # code review
+        content={
+            "issue": issue,
+            "file_paths": file_paths_json,
+            "file_contents": file_contents_json,
+        },
+        pubkey="",
+    )
