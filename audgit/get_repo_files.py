@@ -90,17 +90,17 @@ def print_file_tree(file_paths: list):
                 current_level[part] = {}
             current_level = current_level[part]
 
-    # def print_tree(current_level: dict, prefix: str = ""):
-    #     for part in current_level:
-    #         new_prefix = os.path.join(prefix, part)
-    #         print(f"└─ {new_prefix}")
-    #         if len(current_level[part]) > 0:
-    #             print_tree(current_level[part], new_prefix)
-
     def print_tree(current_level: dict, prefix: str = ""):
         for part in current_level:
-            print(f"{prefix}└─ {part}")
+            new_prefix = os.path.join(prefix, part)
+            print(f"└─ {new_prefix}")
             if len(current_level[part]) > 0:
-                print_tree(current_level[part], prefix + "  ")
+                print_tree(current_level[part], new_prefix)
+
+    # def print_tree(current_level: dict, prefix: str = ""):
+    #     for part in current_level:
+    #         print(f"{prefix}└─ {part}")
+    #         if len(current_level[part]) > 0:
+    #             print_tree(current_level[part], prefix + "  ")
 
     print_tree(file_tree)
