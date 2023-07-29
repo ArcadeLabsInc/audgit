@@ -40,8 +40,6 @@ class Monitor:
             try:
                 while event_msg := relay_manager.message_pool.events.get(timeout=5):
                     event: Event = cast(Event, event_msg.event)
-                    print("event created at: ", event.created_at)
-                    continue
                     name = ""
                     for tag in event.tags:
                         if tag[0] == "j":
