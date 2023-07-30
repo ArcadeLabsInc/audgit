@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
 from queue import Empty
 from typing import cast, Callable
 
@@ -18,7 +19,13 @@ def get_tag(event, param):
     for tag in event.tags:
         if tag[0] == param:
             return tag[1]
+class Executor:
 
+  def __init__(self, max_workers=10):
+    self.executor = ThreadPoolExecutor(max_workers=max_workers)
+
+  def submit(self, fn, *args, **kwargs):
+    return self.executor.submit(fn, *args, **kwargs)
 
 class Monitor:
     def __init__(self, debug: bool):
@@ -26,6 +33,7 @@ class Monitor:
         self.handlers: dict[str, Callable] = {}
         self.private_key = PrivateKey.from_hex(os.environ["NOSTR_PRIVKEY"])
         self.since = int(time.time() - 7200)
+        self.executor = Executor()
 
     def add_handler(self, name, func):
         self.handlers[name] = func
@@ -46,11 +54,7 @@ class Monitor:
             try:
                 while event_msg := relay_manager.message_pool.events.get(timeout=5):
                     event: Event = cast(Event, event_msg.event)
-                    name = ""
-                    for tag in event.tags:
-                        if tag[0] == "j":
-                            name = tag[1]
-
+                    name = get_tag(event, "j")
                     if name not in self.handlers:
                         continue
 
@@ -60,33 +64,37 @@ class Monitor:
                     if event.created_at < self.since:
                         continue
 
-                    log.info("processing event: %s", event.id)
-                    try:
-                        result: Event
-                        for result in self.handlers[name](event):
-                            result.kind = 65001
-                            result.public_key = self.private_key.public_key.hex()
-                            self.private_key.sign_event(result)
-                            if result:
-                                log.info("publishing result {%s}, for event: %s", result.tags, event.id)
-                                relay_manager.publish_event(result)
-                    except Exception as ex:
-                        log.exception("Exception in handler")
-                        result = Event(kind=65001, content=f"Exception: {repr(ex)}", tags=[["e", event.id], ["status", "failure"]])
-                        result.pubkey = self.private_key.public_key.hex(),
-                        self.private_key.sign_event(result)
-                        relay_manager.publish_event(result)
+                    self.executor.submit(self.handle_event, event, relay_manager)
 
                     if once:
                         break
             except Empty:
                 if once:
+                    log.info("no events for --once flag")
                     break
                 pass
             except Exception as ex:
                 log.debug("Exception in main loop: %s", ex)
 
-    #        relay_manager.close_all_relay_connections()
+        relay_manager.close_all_relay_connections()
+
+    def handle_event(self, event, relay_manager):
+        name = get_tag(event, "j")
+        try:
+            result: Event
+            for result in self.handlers[name](event):
+                result.kind = 65001
+                result.public_key = self.private_key.public_key.hex()
+                self.private_key.sign_event(result)
+                if result:
+                    log.info("publishing result {%s}, for event: %s", result.tags, event.id)
+                    relay_manager.publish_event(result)
+        except Exception as ex:
+            log.exception("Exception in handler")
+            result = Event(kind=65001, content=f"Exception: {repr(ex)}", tags=[["e", event.id], ["status", "failure"]])
+            result.pubkey = self.private_key.public_key.hex(),
+            self.private_key.sign_event(result)
+            relay_manager.publish_event(result)
 
     def _subscribe(self, filter: Filter | list[Filter]):
         relay_manager = RelayManager()
