@@ -1,7 +1,7 @@
-import time
+import re
 from pynostr.event import Event
-from typing import Optional
-from audgit.get_repo_files import get_file_tree, get_file_contents, print_file_tree
+from audgit.claude_call import which_files_claude_call
+from audgit.get_repo_files import get_file_tree
 import requests
 import json
 import os
@@ -63,6 +63,17 @@ def code_review(event: Event):
 
     # convert the file_paths to json and send to the event
     file_paths_json = json.dumps(file_paths)
+    claude_res = which_files_claude_call(issue["title"], issue["body"], file_paths_json)
+    print("Got claude_res...")
+    print(claude_res)
+    pattern = r"\[[^\]]*\]"
+
+    match = re.findall(pattern, claude_res)
+
+    # parse the matched json string back to list
+    file_paths_to_review = json.loads(match[0]) if match else []
+    print("Got file_paths_to_review...")
+    print(file_paths_to_review)
     # file_contents_json = json.dumps(file_contents)
 
     log.debug("Creating event...")
@@ -71,23 +82,32 @@ def code_review(event: Event):
     content_str = json.dumps(
         {
             "issue": issue,
-            "file_paths": file_paths_json,
+            "file_paths": file_paths_to_review,
+            "claude_res": claude_res,
             # "file_contents": file_contents_json,
         }
     )
 
-    event = Event(
+    stringified_event = json.loads(str(event))
+    print("Stringified event: " + str(stringified_event))
+
+    job_result_event = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
-        tags=[["status", "success"], ["e", event.id], ["p", event.pubkey]],  # add a tag to indicate the status of the job
+        tags=[
+            ["p", event.pubkey],
+            ["e", event.id],
+            ["R", "tree_summary"],
+            ["status", "partial"]
+        ],  # add a tag to indicate the status of the job
         pubkey=private_key.public_key.hex(),  # assuming you want the hex value of the public key
     )
-    log.debug("Created event...")
 
     log.debug("Signing event...")
     # sign event
-    event.sign(private_key.hex())
-    log.debug("Signed event: ")# + str(event)
-
+    job_result_event.sign(private_key.hex())
     # send event
     return event
+
+
+print(code_review(Event(content="https://github.com/ArcadeLabsInc/arcade/issues/466")))
