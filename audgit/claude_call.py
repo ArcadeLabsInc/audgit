@@ -54,8 +54,8 @@ The file tree for the code to review is below, wrapped in XML tags:
 Respond with a list of up to 10 files you'd like to review in order to solve this issue:
 
 [
-"/path/to/file1.xml",
-"/path/to/file2.py",
+"path/to/file1.xml",
+"path/to/file2.py",
 ...
 ]
 
@@ -82,7 +82,10 @@ def partition(file_paths):
     tot_len = 0
     for fil in file_paths:
         with open(fil) as fi:
-            content = fi.read()
+            try:
+                content = fi.read()
+            except FileNotFoundError:
+                continue
             if len(content) / 3 > 90000:
                 raise ValueError("Cannot process single file of more than 270k for now")
             tot_len += len(content) + len(fil) + 3
@@ -139,7 +142,7 @@ def best_solution_claude_call(issue_title: str, issue_body: str, file_paths: lis
         partials.append(partial_solution_claude_call(issue_title, issue_body, chunk))
 
     if len(partials) == 1:
-        return partials[1]
+        return partials[0]
 
     return summarize(issue_title, issue_body, partials)
 
