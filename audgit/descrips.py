@@ -36,11 +36,11 @@ def complete(prompt: str):
     return completion.completion
 
 
-def generate_file_descrips(paths):
+def generate_file_descrips(paths, repo_root):
     """what"""
     filtered_paths = filter_filepaths(paths)
     print("Generating descriptions for filtered_paths.")
-    pierre = ThankYouPierre("ArcadeLabsInc", "audgit", "/tmp/repo/audgit")
+    pierre = ThankYouPierre("ArcadeLabsInc", "audgit", repo_root)
     descriptions = pierre.get_descriptions()
     descriptions = {k.replace(pierre.local_path, ''): v for k, v in descriptions.items()}
 
@@ -49,34 +49,42 @@ def generate_file_descrips(paths):
     return descriptions
 
 
-
-
 def filter_filepaths(paths):
     """filter out non-relevant files"""
 
     # Filter out file suffixes
-    bad_suffixes = ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.ttf', '.woff', '.woff2', '.eot', '.mp4', '.mp3', '.wav', '.ogg', '.webm', '.zip', '.tar', '.gz', '.rar', '.7z', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.exe', '.dll', '.so', '.a', '.o', '.obj', '.lib', '.pyc', '.pyo', '.class', '.jar', '.war', '.ear', '.iml', '.idea', '.DS_Store', '.gitignore', '.gitattributes', '.gitmodules', '.gitkeep', '.git', '.hgignore', '.hg', '.svn', '.cvs', '.bzrignore', '.bzr', '.npmignore', '.npmrc', '.yarnrc', '.yarnclean', '.yarn-integrity', '.yarnclean', '.yarn-metadata.json', '.yarn-tarball.tgz', '.yarncl']
+    bad_suffixes = ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.ttf', '.woff', '.woff2', '.eot', '.mp4', '.mp3',
+                    '.wav', '.ogg', '.webm', '.zip', '.tar', '.gz', '.rar', '.7z', '.pdf', '.doc', '.docx', '.xls',
+                    '.xlsx', '.ppt', '.pptx', '.exe', '.dll', '.so', '.a', '.o', '.obj', '.lib', '.pyc', '.pyo',
+                    '.class', '.jar', '.war', '.ear', '.iml', '.idea', '.DS_Store', '.gitignore', '.gitattributes',
+                    '.gitmodules', '.gitkeep', '.git', '.hgignore', '.hg', '.svn', '.cvs', '.bzrignore', '.bzr',
+                    '.npmignore', '.npmrc', '.yarnrc', '.yarnclean', '.yarn-integrity', '.yarnclean',
+                    '.yarn-metadata.json', '.yarn-tarball.tgz', '.yarncl']
 
     # Filter out file prefixes
     bad_prefixes = ['ios', 'android', '.git', '.hg', '.svn', '.cvs', '.bzr', '.npm', '.yarn']
 
     # Use list comprehension to filter out bad suffixes and prefixes
-    filtered_paths = [path for path in paths if not any(path.endswith(suffix) for suffix in bad_suffixes) and not any(path.startswith(prefix) for prefix in bad_prefixes)]
+    filtered_paths = [path for path in paths if not any(path.endswith(suffix) for suffix in bad_suffixes) and not any(
+        path.startswith(prefix) for prefix in bad_prefixes)]
 
     return filtered_paths
 
 
 class ThankYouPierre():
-    extensions = ('.js', '.jsx', '.py', '.json', '.html', '.css', '.scss', '.yml', '.yaml', '.ts', '.tsx', '.ipynb', '.c', '.cc', '.cpp', '.go', '.h', '.hpp', '.java', '.sol', '.sh', '.txt')
+    extensions = (
+    '.js', '.jsx', '.py', '.json', '.html', '.css', '.scss', '.yml', '.yaml', '.ts', '.tsx', '.ipynb', '.c', '.cc',
+    '.cpp', '.go', '.h', '.hpp', '.java', '.sol', '.sh', '.txt')
     directory_blacklist = ('build', 'dist', '.github', 'site', 'tests')
-    def __init__(self, org, name, repo_dir='repos'):
+
+    def __init__(self, org, name, local_path):
         self.org = org
         self.name = name
-        self.dir = repo_dir
 
         self.remote_path = f'{org}/{name}'
-        self.local_path = "/tmp/repo/audgit" # f'{repo_dir}/{name}'
-
+        self.local_path = local_path
+        self.tmp_path = local_path + "/.pierre"
+        os.makedirs(self.tmp_path, exist_ok=True)
         self.num_files = 345
 
     def walk(self, max_num_files=1000):
@@ -144,15 +152,6 @@ class ThankYouPierre():
         return descriptions
 
     def save_descriptions(self, descriptions):
-        save_path = os.path.join(tempfile.gettempdir(), f"{self.name}_descriptions.json")
-        # save_path = f'embeddings/{self.name}_descriptions.json'
+        save_path = os.path.join(self.tmp_path, f"{self.name}_descriptions.json")
         with open(save_path, 'w') as f:
             json.dump(descriptions, f)
-
-
-if __name__ == "__main__":
-    REPO = "audgit"
-    repo_url = f"https://github.com/ArcadeLabsInc/{REPO}.git"
-    local_path = f"/tmp/repo/{REPO}"  # Define the local path where the repo is cloned
-    file_paths = get_file_tree(repo_url, local_path)
-    generate_file_descrips(file_paths)

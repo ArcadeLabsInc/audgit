@@ -25,32 +25,40 @@ My feedback is detailed but usually brief. I provide a bulleted list of issues f
 SYSTEM_PROMPT = SYSTEM_PROMPT.replace("\n", " ")
 
 
-def which_files_claude_call(issue_title: str, issue_body: str, file_paths: str):
+def which_files_claude_call(issue_title: str, issue_body: str, file_paths: dict[str, str]):
+    file_info_json = json.dumps(file_paths)
+
     issue = f"""
-  Issue Title: {issue_title}
-  
-  Issue Body: 
+Issue Title: {issue_title}
+
+Issue Body: 
   {issue_body}
   """
 
-    code = f"<CodeToReview>{file_paths}</CodeToReview>"
+    code = f"<CodeToReview>{file_info_json}</CodeToReview>"
 
     prompt = f"""{HUMAN_PROMPT}
 
-  You are an open source developer conducting a code review:
+You are an open source developer conducting a code review:
 
-  <Persona>{SYSTEM_PROMPT}</Persona>
+<Persona>{SYSTEM_PROMPT}</Persona>
 
-  You are attempting to audit the code based on this issue:
+You are attempting to audit the code based on this issue:
 
-  {issue}
+{issue}
 
-  The file tree for the code to review is below, wrapped in XML tags:
+The file tree for the code to review is below, wrapped in XML tags:
 
-  {code}
+{code}
 
-  Respond with only the files you'd like to review as part of the code review in JSON format.
-  {AI_PROMPT}
+Respond with only the files you'd like to review as part of the code review in the following format.
+
+[
+'/path/to/file1.xml',
+'/path/to/file2.py',
+]
+
+{AI_PROMPT}
   """
 
     anthropic = Anthropic()
@@ -65,10 +73,110 @@ def which_files_claude_call(issue_title: str, issue_body: str, file_paths: str):
     # parse the matched json string back to list
     file_paths_to_review = json.loads(match[0]) if match else []
 
+    return file_paths_to_review
+
+
+def partition(file_paths):
+    res = {}
+    tot_len = 0
+    for fil in file_paths:
+        with open(fil) as fi:
+            content = fi.read()
+            if len(content) / 3 > 90000:
+                raise ValueError("Cannot process single file of more than 270k for now")
+            tot_len += len(content) + len(fil) + 3
+            if tot_len / 3 > 90000:
+                yield res
+                res = {}
+            res[fil] = content
+    if res:
+        yield res
+
+
+def summarize(issue_title, issue_body, partials: list[str]):
+    combo = "\n\n".join(partials)
+
+    issue = f"""
+Issue Title: {issue_title}
+
+Issue Body: 
+{issue_body}
+    """
+
+    code = f"<SolutionsToConsolidate>{combo}</SolutionsToConsolidate>"
+
+    prompt = f"""{HUMAN_PROMPT}
+
+You are an open source developer trying to solve an issue.
+
+<Persona>{SYSTEM_PROMPT}</Persona>
+
+You are attempting to fix this issue:
+
+{issue}
+
+This is a set of suggested actions coming from different developers:
+
+{code}
+
+Respond with a unified solution and course of action.
+
+{AI_PROMPT}
+    """
+
+    anthropic = Anthropic()
+    completion = anthropic.completions.create(
+        model="claude-2", max_tokens_to_sample=3000, prompt=prompt
+    )
     return completion.completion
 
 
+def best_solution_claude_call(issue_title: str, issue_body: str, file_paths: list[str]):
+    partials = []
 
+    for chunk in partition(file_paths):
+        partials.append(partial_solution_claude_call(issue_title, issue_body, chunk))
+
+    if len(partials) == 1:
+        return partials[1]
+
+    return summarize(issue_title, issue_body, partials)
+
+
+def partial_solution_claude_call(issue_title: str, issue_body: str, chunk: dict[str, str]):
+    issue = f"""
+Issue Title: {issue_title}
+
+Issue Body: 
+{issue_body}
+  """
+
+    code = f"<CodeToReview>{chunk}</CodeToReview>"
+
+    prompt = f"""{HUMAN_PROMPT}
+
+You are an open source developer trying to solve an issue:
+
+<Persona>{SYSTEM_PROMPT}</Persona>
+
+You are attempting to fix this issue:
+
+{issue}
+
+Some files that are relevant are below wrapped in XML tags:
+
+{code}
+
+Respond with a potential solution or course of action.
+
+{AI_PROMPT}
+  """
+
+    anthropic = Anthropic()
+    completion = anthropic.completions.create(
+        model="claude-2", max_tokens_to_sample=3000, prompt=prompt
+    )
+    return completion.completion
 
 # code_to_review = """
 # import requests

@@ -1,12 +1,11 @@
-import re
 from pynostr.event import Event
-from audgit.claude_call import which_files_claude_call
+from audgit.claude_call import which_files_claude_call, best_solution_claude_call
+from audgit.descrips import generate_file_descrips
 from audgit.get_repo_files import get_file_tree
 import requests
 import json
 import os
 from dotenv import load_dotenv
-from pynostr.key import PrivateKey
 import logging
 
 log = logging.getLogger("audgit")
@@ -14,7 +13,6 @@ log = logging.getLogger("audgit")
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
 load_dotenv()
-
 
 # Load the token from an environment variable
 TOKEN = os.getenv("GITHUB_TOKEN")
@@ -25,11 +23,10 @@ headers = {
     "Authorization": f"token {TOKEN}",
 }
 
+
 # Generate a new keypair for the demonstration
-private_key = PrivateKey.from_hex(os.getenv("NOSTR_PRIVKEY"))
 
-
-def code_review(event: Event):
+def code_review(event: Event) -> Event:
     log.debug("Got event...")
     issue_url = event.content
 
@@ -49,29 +46,17 @@ def code_review(event: Event):
 
     repo_url = f"https://github.com/{owner}/{repo}.git"
     local_path = f"/tmp/repo/{repo}"  # Define the local path where the repo is cloned
+
     file_paths = get_file_tree(repo_url, local_path)
-    # print_file_tree(file_paths)
 
-    # file_contents = get_file_contents(local_path, file_paths)
+    files_with_descriptions = generate_file_descrips(file_paths)
 
-    # Print file paths and contents
-    # for path, content in file_contents.items():
-    #     print(f"Path: {path}")
-    #     # print(
-    #     #     f"Content: {content[:100]}..."
-    #     # )  # Print only the first 100 characters for brevity
-
-    # convert the file_paths to json and send to the event
-    file_paths_json = json.dumps(file_paths)
     file_paths_to_review = which_files_claude_call(
-        issue["title"], issue["body"], file_paths_json
+        issue["title"],
+        issue["body"],
+        files_with_descriptions
     )
 
-    # file_contents_json = json.dumps(file_contents)
-
-    log.debug("Creating event...")
-    # create the event
-    # Convert the dictionary into a JSON string
     content_str = json.dumps(
         {
             "issue": issue,
@@ -80,26 +65,34 @@ def code_review(event: Event):
         }
     )
 
-    stringified_event = json.loads(str(event))
-    print("Stringified event: " + str(stringified_event))
-
     job_result_event = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
         tags=[
             ["p", event.pubkey],
             ["e", event.id],
-            ["R", "tree_summary"],
+            ["R", "claude_files"],
             ["status", "partial"]
-        ],  # add a tag to indicate the status of the job
-        pubkey=private_key.public_key.hex(),  # assuming you want the hex value of the public key
+        ]
     )
 
-    log.debug("Signing event...")
-    # sign event
-    job_result_event.sign(private_key.hex())
-    # send event
-    return event
+    yield job_result_event
+
+    final = best_solution_claude_call(issue["title"], issue["body"], file_paths_to_review)
+
+    job_result_event = Event(
+        kind=65001,  # code review job result
+        content=final,  # use the JSON string here
+        tags=[
+            ["p", event.pubkey],
+            ["e", event.id],
+            ["R", "claude_solution"],
+            ["status", "success"]
+        ]
+    )
+
+    yield job_result_event
+
 
 
 print(code_review(Event(content="https://github.com/ArcadeLabsInc/arcade/issues/466")))

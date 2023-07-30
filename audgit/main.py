@@ -14,6 +14,7 @@ def parse_args():
     )
     parser.add_argument("--list", action="store_true", help="Show job list")
     parser.add_argument("--start", action="store_true", help="Start processing jobs")
+    parser.add_argument("--review", help="Review a single github issue")
 
     return parser.parse_args()
 
@@ -43,6 +44,8 @@ def main():
         mon.list()
     if args.one:
         mon.one()
+    if args.review:
+        mon.cli_review(args.review)
 
 
 if __name__ == "__main__":
