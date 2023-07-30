@@ -1,4 +1,3 @@
-import time
 from nostr.event import Event
 from audgit.claude_call import which_files_claude_call, best_solution_claude_call
 from audgit.descrips import generate_file_descrips
@@ -55,6 +54,10 @@ def code_review(event: Event) -> Event:
         }
     )
 
+    ln_callback = get_callback(msats=1000)
+    invoice = ln_callback["pr"]
+    verify_url = ln_callback["verify"]
+
     ack_event = Event(
         kind=65001,  # code review job result
         content=issue_msg,  # use the JSON string here
@@ -99,10 +102,6 @@ def code_review(event: Event) -> Event:
             # "file_contents": file_contents_json,
         }
     )
-
-    ln_callback = get_callback(msats=1000)
-    invoice = ln_callback["pr"]
-    verify_url = ln_callback["verify"]
 
     job_result_event = Event(
         kind=65001,  # code review job result
