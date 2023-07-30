@@ -57,15 +57,16 @@ def code_review(event: Event) -> Event:
         file_paths, owner, repo, f"/tmp/repo/{repo}"
     )
 
-    pruned_descriptions = {
-        k.replace(local_path, ""): v for k, v in files_with_descriptions.items()
-    }
 
-    file_paths_to_review = which_files_claude_call(
-        issue["title"], issue["body"], pruned_descriptions
+    pruned_descriptions = {k.replace(local_path, '').lstrip("/").lstrip("\\"): v for k, v in files_with_descriptions.items()}
+
+    file_paths_to_review: list[str] = which_files_claude_call(
+        issue["title"],
+        issue["body"],
+        pruned_descriptions
     )
 
-    full_paths = [os.path.join(local_path, fil) for fil in file_paths_to_review]
+    full_paths = [os.path.join(local_path, fil.lstrip("/").lstrip("\\")) for fil in file_paths_to_review]
 
     content_str = json.dumps(
         {
