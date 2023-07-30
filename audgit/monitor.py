@@ -106,7 +106,7 @@ class Monitor:
         self.start(once=True)
 
     def cli_review(self, issue: str):
-        name = "code_review"
+        name = "code-review"
         event = Event(content=issue, tags=[["j", "code_review"]])
         for result in self.handlers[name](event):
             print(result)

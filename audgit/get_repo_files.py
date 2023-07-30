@@ -19,7 +19,7 @@ headers = {
 }
 
 
-def get_file_tree(repo_url: str, local_path: str = "/tmp/repo"):
+def get_file_tree(repo_url: str, local_path: str):
     """
     Clone a repository and return the tree structure
     """

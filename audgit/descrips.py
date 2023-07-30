@@ -2,7 +2,8 @@
 
 import os
 import json
-import tempfile
+import logging as log
+
 
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 
@@ -24,10 +25,6 @@ def complete(prompt: str):
 {AI_PROMPT}
   """
 
-    print("------")
-    print(bigger_prompt)
-    print("------")
-
     anthropic = Anthropic()
     completion = anthropic.completions.create(
         model="claude-instant-1", max_tokens_to_sample=3000, prompt=bigger_prompt
@@ -36,15 +33,15 @@ def complete(prompt: str):
     return completion.completion
 
 
-def generate_file_descrips(paths, repo_root):
+def generate_file_descrips(paths, org, name, repo_root):
     """what"""
     filtered_paths = filter_filepaths(paths)
-    print("Generating descriptions for filtered_paths.")
-    pierre = ThankYouPierre("ArcadeLabsInc", "audgit", repo_root)
+    log.debug("Generating descriptions for filtered_paths.")
+    pierre = ThankYouPierre(org, name, repo_root)
     descriptions = pierre.get_descriptions()
     descriptions = {k.replace(pierre.local_path, ''): v for k, v in descriptions.items()}
 
-    print(descriptions)
+    log.debug("description: %s", descriptions)
 
     return descriptions
 
@@ -81,7 +78,6 @@ class ThankYouPierre():
         self.org = org
         self.name = name
 
-        self.remote_path = f'{org}/{name}'
         self.local_path = local_path
         self.tmp_path = local_path + "/.pierre"
         os.makedirs(self.tmp_path, exist_ok=True)
@@ -121,7 +117,6 @@ class ThankYouPierre():
 
     def get_descriptions(self, save=True, save_every=10):
         descriptions = self.load_descriptions()
-        print(descriptions)
         if descriptions is not None and len(descriptions) == self.num_files:
             return descriptions
 
@@ -140,8 +135,10 @@ class ThankYouPierre():
             description = complete(prompt)
             descriptions[filename] = description
 
+            log.debug(f"{filename}: {description}")
+
             if save and (num_files % save_every == 0):
-                print(f'Saving descriptions for {num_files} files')
+                log.debug(f'Saving descriptions for {num_files} files')
                 self.save_descriptions(descriptions)
 
             num_files += 1

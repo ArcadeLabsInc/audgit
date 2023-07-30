@@ -49,7 +49,7 @@ def code_review(event: Event) -> Event:
 
     file_paths = get_file_tree(repo_url, local_path)
 
-    files_with_descriptions = generate_file_descrips(file_paths)
+    files_with_descriptions = generate_file_descrips(file_paths, owner, repo, f"/tmp/repo/{repo}")
 
     file_paths_to_review = which_files_claude_call(
         issue["title"],
