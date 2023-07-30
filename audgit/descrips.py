@@ -131,7 +131,11 @@ class ThankYouPierre():
             if len(code)/3 > 100000:
                 code = code[0:300000]
             prompt = f'File: {filename}\n\nCode:\n\n```{extension}\n{code}```\n\n{description_prompt}\nThis file'
-            description = complete(prompt)
+            try:
+                description = complete(prompt)
+            except Exception:
+                log.exception("Error doing completion for :%s", filename)
+                continue
             descriptions[filename] = description
 
             log.debug(f"{filename}: {description}")

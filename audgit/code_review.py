@@ -121,13 +121,6 @@ Files:
 
 {fil_str}
 """
-    json.dumps(
-        {
-            "issue": issue["title"],
-            "file_paths": file_paths_to_review,
-        }
-    )
-
     job_result_tmp = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
@@ -136,7 +129,7 @@ Files:
             ["e", event.id],
             ["R", "claude_files"],
             ["issue", issue_msg],
-            ["file_paths", file_paths_to_review],
+            ["file_paths", json.dumps(file_paths_to_review)],
             ["status", "payment_required"],
             ["amount", "1000", invoice],
         ],
