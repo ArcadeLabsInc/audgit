@@ -128,7 +128,7 @@ Files:
         }
     )
 
-    job_result_event = Event(
+    job_result_tmp = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
         tags=[
@@ -142,7 +142,7 @@ Files:
         ],
     )
 
-    yield job_result_event
+    yield job_result_tmp
 
     # Wait for the payment to be made by polling against the verify_url
     #    while True:
