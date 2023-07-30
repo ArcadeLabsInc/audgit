@@ -1,6 +1,8 @@
+import re
 import time
 from pynostr.event import Event
 from typing import Optional
+from audgit.claude_call import which_files_claude_call
 from audgit.get_repo_files import get_file_tree, get_file_contents, print_file_tree
 import requests
 import json
@@ -60,6 +62,31 @@ def code_review(event: Event):
 
     # convert the file_paths to json and send to the event
     file_paths_json = json.dumps(file_paths)
+    claude_res = which_files_claude_call(issue["title"], issue["body"], file_paths_json)
+    print("Got claude_res...")
+    print(claude_res)
+    pattern = r"\[[^\]]*\]"
+
+    match = re.findall(pattern, claude_res)
+
+    # parse the matched json string back to list
+    file_paths_to_review = json.loads(match[0]) if match else []
+    print("Got file_paths_to_review...")
+    print(file_paths_to_review)
+    exit()
+
+    if match:
+        # extract the matched json string
+        json_str = match.group()
+
+        # parse the json string
+        data = json.loads(json_str)
+
+        # extract the file paths
+        file_paths_to_review = data["filesToReview"]
+
+    print(file_paths_to_review)
+    exit()
     # file_contents_json = json.dumps(file_contents)
 
     print("Creating event...")
@@ -69,6 +96,7 @@ def code_review(event: Event):
         {
             "issue": issue,
             "file_paths": file_paths_json,
+            "claude_res": claude_res,
             # "file_contents": file_contents_json,
         }
     )
@@ -84,7 +112,10 @@ def code_review(event: Event):
     print("Signing event...")
     # sign event
     event.sign(private_key.hex())
-    print("Signed event: ")# + str(event)
+    print("Signed event: ")  # + str(event)
 
     # send event
     return event
+
+
+print(code_review(Event(content="https://github.com/ArcadeLabsInc/arcade/issues/466")))
