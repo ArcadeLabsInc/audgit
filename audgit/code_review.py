@@ -77,7 +77,7 @@ Prepare to be claudited.
             ["issue", issue_msg],
             ["status", "processing"],
             ["amount", "1000", invoice],
-            ["verify", verify_url],
+            ["verify_url", verify_url],
         ],
     )
 
@@ -133,7 +133,7 @@ Files:
             ["file_paths", json.dumps(file_paths_to_review)],
             ["status", "payment_required"],
             ["amount", "1000", invoice],
-            ["verify", verify_url],
+            ["verify_url", verify_url],
         ],
     )
 
