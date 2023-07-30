@@ -1,6 +1,8 @@
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 import os
 from dotenv import load_dotenv
+import json
+import re
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
@@ -56,7 +58,16 @@ def which_files_claude_call(issue_title: str, issue_body: str, file_paths: str):
         model="claude-2", max_tokens_to_sample=3000, prompt=prompt
     )
 
+    pattern = r"\[[^\]]*\]"
+
+    match = re.findall(pattern, completion.completion)
+
+    # parse the matched json string back to list
+    file_paths_to_review = json.loads(match[0]) if match else []
+
     return completion.completion
+
+
 
 
 # code_to_review = """
