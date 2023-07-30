@@ -48,6 +48,27 @@ def code_review(event: Event) -> Event:
     issue = response.json()
     log.debug("Got issue...")
 
+    issue_msg = json.dumps(
+        {
+            "issue_title": issue["title"],
+            "issue_body": issue["body"],
+        }
+    )
+
+    ack_event = Event(
+        kind=65001,  # code review job result
+        content=issue_msg,  # use the JSON string here
+        tags=[
+            ["p", event.public_key],
+            ["e", event.id],
+            ["R", "issue_ack"],
+            ["status", "processing"],
+            ["amount", "1000", invoice],
+        ],
+    )
+
+    yield ack_event
+
     repo_url = f"https://github.com/{owner}/{repo}.git"
     local_path = f"/tmp/repo/{repo}"  # Define the local path where the repo is cloned
 
@@ -57,15 +78,19 @@ def code_review(event: Event) -> Event:
         file_paths, owner, repo, f"/tmp/repo/{repo}"
     )
 
-    pruned_descriptions = {k.replace(local_path, '').lstrip("/").lstrip("\\"): v for k, v in files_with_descriptions.items()}
+    pruned_descriptions = {
+        k.replace(local_path, "").lstrip("/").lstrip("\\"): v
+        for k, v in files_with_descriptions.items()
+    }
 
     file_paths_to_review: list[str] = which_files_claude_call(
-        issue["title"],
-        issue["body"],
-        pruned_descriptions
+        issue["title"], issue["body"], pruned_descriptions
     )
 
-    full_paths = [os.path.join(local_path, fil.lstrip("/").lstrip("\\")) for fil in file_paths_to_review]
+    full_paths = [
+        os.path.join(local_path, fil.lstrip("/").lstrip("\\"))
+        for fil in file_paths_to_review
+    ]
 
     content_str = json.dumps(
         {
@@ -94,15 +119,15 @@ def code_review(event: Event) -> Event:
     yield job_result_event
 
     # Wait for the payment to be made by polling against the verify_url
-#    while True:
-#        res = requests.get(verify_url)
-#        if res.status_code != 200:
-#            raise Exception(f"Error: API request status {res.status_code}")
-#        if res.json()["settled"]:
-#            log.debug("Payment received!")
-#            break
-#        log.debug("Waiting for payment...")
-#        time.sleep(3)
+    #    while True:
+    #        res = requests.get(verify_url)
+    #        if res.status_code != 200:
+    #            raise Exception(f"Error: API request status {res.status_code}")
+    #        if res.json()["settled"]:
+    #            log.debug("Payment received!")
+    #            break
+    #        log.debug("Waiting for payment...")
+    #        time.sleep(3)
 
     final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
