@@ -117,7 +117,7 @@ class Monitor:
         relay_manager = self._subscribe(close_on_eose=True, filter=fil)
 
         # wait for eose
-        relay_manager.message_pool.eose_notices.get(timeout=10)
+        relay_manager.message_pool.eose_notices.get(timeout=60)
 
         for event_msg in relay_manager.message_pool.get_all_events():
             event: Event = event_msg.event
