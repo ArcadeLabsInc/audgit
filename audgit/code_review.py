@@ -133,6 +133,7 @@ Files:
             ["file_paths", json.dumps(file_paths_to_review)],
             ["status", "payment_required"],
             ["amount", "1000", invoice],
+            ["verify", verify_url],
         ],
     )
 
