@@ -73,20 +73,6 @@ def code_review(event: Event):
     file_paths_to_review = json.loads(match[0]) if match else []
     print("Got file_paths_to_review...")
     print(file_paths_to_review)
-    exit()
-
-    if match:
-        # extract the matched json string
-        json_str = match.group()
-
-        # parse the json string
-        data = json.loads(json_str)
-
-        # extract the file paths
-        file_paths_to_review = data["filesToReview"]
-
-    print(file_paths_to_review)
-    exit()
     # file_contents_json = json.dumps(file_contents)
 
     print("Creating event...")
@@ -95,7 +81,7 @@ def code_review(event: Event):
     content_str = json.dumps(
         {
             "issue": issue,
-            "file_paths": file_paths_json,
+            "file_paths": file_paths_to_review,
             "claude_res": claude_res,
             # "file_contents": file_contents_json,
         }
