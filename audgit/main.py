@@ -30,6 +30,8 @@ def setup_logging():
 
 
 def main():
+    setup_logging()
+
     args = parse_args()
     if args.debug:
         log.setLevel(logging.DEBUG)

@@ -3,13 +3,14 @@ import os
 from dotenv import load_dotenv
 import json
 import re
+import logging as log
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
 load_dotenv()
 
 # Load the token from an environment variable
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
 SYSTEM_PROMPT = """
 My name is Percy Precise and I have been contributing to open source projects for over 15 years. I have very high standards when it comes to code quality and efficiency. When I conduct a code review, I am focused and blunt - my goal is to identify areas for improvement, not protect feelings.
@@ -32,7 +33,7 @@ def which_files_claude_call(issue_title: str, issue_body: str, file_paths: dict[
 Issue Title: {issue_title}
 
 Issue Body: 
-  {issue_body}
+{issue_body}
   """
 
     code = f"<CodeToReview>{file_info_json}</CodeToReview>"
@@ -45,13 +46,13 @@ You are an open source developer conducting a code review:
 
 You are attempting to audit the code based on this issue:
 
-{issue}
+<Issue>{issue}</Issue>
 
 The file tree for the code to review is below, wrapped in XML tags:
 
 {code}
 
-Respond with a list of up to 10 files you'd like to review in order to solve this issue:
+Respond with a list of up to 10 files you'd like to review in order to respond to this issue:
 
 [
 "path/to/file1.xml",
@@ -81,18 +82,22 @@ def partition(file_paths):
     res = {}
     tot_len = 0
     for fil in file_paths:
-        with open(fil) as fi:
-            try:
-                content = fi.read()
-            except FileNotFoundError:
-                continue
-            if len(content) / 3 > 90000:
-                raise ValueError("Cannot process single file of more than 270k for now")
-            tot_len += len(content) + len(fil) + 3
-            if tot_len / 3 > 90000:
-                yield res
-                res = {}
-            res[fil] = content
+        try:
+            with open(fil) as fi:
+                try:
+                    content = fi.read()
+                except FileNotFoundError:
+                    continue
+                if len(content) / 3 > 90000:
+                    raise ValueError("Cannot process single file of more than 270k for now")
+                tot_len += len(content) + len(fil) + 3
+                if tot_len / 3 > 90000:
+                    yield res
+                    res = {}
+                res[fil] = content
+        except FileNotFoundError:
+            log.error("missing file %s", fil)
+            continue
     if res:
         yield res
 
@@ -111,15 +116,15 @@ Issue Body:
 
     prompt = f"""{HUMAN_PROMPT}
 
-You are an open source developer trying to solve an issue.
+You are an open source developer trying to respond to an issue.
 
 <Persona>{SYSTEM_PROMPT}</Persona>
 
-You are attempting to fix this issue:
+You are attempting to respond to this issue:
 
-{issue}
+<Issue>{issue}</Issue>
 
-This is a set of suggested actions coming from different developers:
+This is a set of suggested responses coming from different developers:
 
 {code}
 
@@ -163,15 +168,15 @@ You are an open source developer trying to solve an issue:
 
 <Persona>{SYSTEM_PROMPT}</Persona>
 
-You are attempting to fix this issue:
+You are attempting to respond to this issue:
 
-{issue}
+<Issue>{issue}</Issue>
 
 Some files that are relevant are below wrapped in XML tags:
 
 {code}
 
-Respond with a potential solution or course of action.
+Write a response to the issue:
 
 {AI_PROMPT}
   """

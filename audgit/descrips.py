@@ -9,7 +9,7 @@ from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 
 from audgit.get_repo_files import get_file_tree
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
 
 # def complete(prompt):
@@ -39,7 +39,6 @@ def generate_file_descrips(paths, org, name, repo_root):
     log.debug("Generating descriptions for filtered_paths.")
     pierre = ThankYouPierre(org, name, repo_root)
     descriptions = pierre.get_descriptions()
-    log.debug("description: %s", descriptions)
 
     return descriptions
 

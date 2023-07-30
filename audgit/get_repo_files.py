@@ -10,7 +10,7 @@ import subprocess
 load_dotenv()
 
 # Load the token from an environment variable
-TOKEN = os.getenv("GITHUB_TOKEN")
+TOKEN = os.environ["GITHUB_TOKEN"]
 
 # Define the headers to be used in the requests
 headers = {

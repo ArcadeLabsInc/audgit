@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load the lightning address from an environment variable
-LIGHTNING_ADDRESS = os.getenv("LIGHTNING_ADDRESS")
+LIGHTNING_ADDRESS = os.environ["LIGHTNING_ADDRESS"]
 
 
 def get_callback_url(lnaddr: str):
@@ -17,7 +17,7 @@ def get_callback_url(lnaddr: str):
     username = parts[0]
     domain = parts[1]
 
-    res = requests.get(f"https://{domain}/.well-known/lnurlp{username}")
+    res = requests.get(f"https://{domain}/.well-known/lnurlp/{username}")
     if res.status_code != 200:
         raise Exception(f"Error: API request status {res.status_code}")
     callback = res.json()["callback"]

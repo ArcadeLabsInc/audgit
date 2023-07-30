@@ -8,11 +8,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pynostr = {extras = ["websocket-client"], version = "^0.6.2"}
 beautifulsoup4 = "^4.12.2"
 pygithub = "^1.59.0"
 python-dotenv = "^1.0.0"
 anthropic = "^0.3.6"
+nostr = {git = "https://github.com/earonesty/python-nostr.git", rev = "windows-compat"}
 
 [tool.poetry.scripts]
 audgit = "audgit.main:main"

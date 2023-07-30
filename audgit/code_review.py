@@ -1,5 +1,5 @@
 import time
-from pynostr.event import Event
+from nostr.event import Event
 from audgit.claude_call import which_files_claude_call, best_solution_claude_call
 from audgit.descrips import generate_file_descrips
 from audgit.get_repo_files import get_file_tree
@@ -18,7 +18,7 @@ log = logging.getLogger("audgit")
 load_dotenv()
 
 # Load the token from an environment variable
-TOKEN = os.getenv("GITHUB_TOKEN")
+TOKEN = os.environ["GITHUB_TOKEN"]
 
 # Define the headers to be used in the requests
 headers = {
@@ -57,7 +57,6 @@ def code_review(event: Event) -> Event:
         file_paths, owner, repo, f"/tmp/repo/{repo}"
     )
 
-
     pruned_descriptions = {k.replace(local_path, '').lstrip("/").lstrip("\\"): v for k, v in files_with_descriptions.items()}
 
     file_paths_to_review: list[str] = which_files_claude_call(
@@ -70,7 +69,7 @@ def code_review(event: Event) -> Event:
 
     content_str = json.dumps(
         {
-            "issue": issue,
+            "issue": issue["title"],
             "file_paths": file_paths_to_review,
             # "file_contents": file_contents_json,
         }
@@ -84,7 +83,7 @@ def code_review(event: Event) -> Event:
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
         tags=[
-            ["p", event.pubkey],
+            ["p", event.public_key],
             ["e", event.id],
             ["R", "claude_files"],
             ["status", "payment_required"],
@@ -95,15 +94,15 @@ def code_review(event: Event) -> Event:
     yield job_result_event
 
     # Wait for the payment to be made by polling against the verify_url
-    while True:
-        res = requests.get(verify_url)
-        if res.status_code != 200:
-            raise Exception(f"Error: API request status {res.status_code}")
-        if res.json()["settled"]:
-            log.debug("Payment received!")
-            break
-        log.debug("Waiting for payment...")
-        time.sleep(3)
+#    while True:
+#        res = requests.get(verify_url)
+#        if res.status_code != 200:
+#            raise Exception(f"Error: API request status {res.status_code}")
+#        if res.json()["settled"]:
+#            log.debug("Payment received!")
+#            break
+#        log.debug("Waiting for payment...")
+#        time.sleep(3)
 
     final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
@@ -111,7 +110,7 @@ def code_review(event: Event) -> Event:
         kind=65001,  # code review job result
         content=final,  # use the JSON string here
         tags=[
-            ["p", event.pubkey],
+            ["p", event.public_key],
             ["e", event.id],
             ["R", "claude_solution"],
             ["status", "success"],
