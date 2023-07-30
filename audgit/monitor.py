@@ -80,8 +80,8 @@ class Monitor:
     def _subscribe(self, close_on_eose, filter: Filters | list[Filters]):
         relay_manager = RelayManager(timeout=2)
         relay_manager.add_relay("wss://relay.arcade.city", close_on_eose=close_on_eose)
-        relay_manager.add_relay("wss://nostr-pub.wellorder.net", close_on_eose=close_on_eose)
-        relay_manager.add_relay("wss://relay.damus.io", close_on_eose=close_on_eose)
+        # relay_manager.add_relay("wss://nostr-pub.wellorder.net", close_on_eose=close_on_eose)
+        # relay_manager.add_relay("wss://relay.damus.io", close_on_eose=close_on_eose)
         now = time.time()
         log.debug("now: %s", now)
         if not isinstance(filter, list):
