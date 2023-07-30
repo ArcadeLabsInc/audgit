@@ -80,6 +80,8 @@ class Monitor:
                     if once:
                         break
             except Empty:
+                if once:
+                    break
                 pass
             except Exception as ex:
                 log.debug("Exception in main loop: %s", ex)

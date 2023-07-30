@@ -128,7 +128,7 @@ This is a set of suggested responses coming from different developers:
 
 {code}
 
-Respond with a unified solution and course of action.
+Respond with a unified solution and course of action in markdown.
 
 {AI_PROMPT}
     """
@@ -176,7 +176,7 @@ Some files that are relevant are below wrapped in XML tags:
 
 {code}
 
-Write a response to the issue:
+Write a response to the issue, using markdown:
 
 {AI_PROMPT}
   """

@@ -60,11 +60,21 @@ def code_review(event: Event) -> Event:
 
     ack_event = Event(
         kind=65001,  # code review job result
-        content=issue_msg,  # use the JSON string here
+        content=f"""
+I'm your claude code auditor.   I will be auditing github issue:
+
+## {issue["title"]}
+```
+{issue["body"]}
+```
+
+Prepare to be claudited.
+        """,  # use the JSON string here
         tags=[
             ["p", event.public_key],
             ["e", event.id],
             ["R", "issue_ack"],
+            ["issue", issue_msg],
             ["status", "processing"],
             ["amount", "1000", invoice],
         ],
@@ -95,11 +105,26 @@ def code_review(event: Event) -> Event:
         for fil in file_paths_to_review
     ]
 
-    content_str = json.dumps(
+    fil_str = ""
+    for fil in file_paths_to_review:
+        descr = files_with_descriptions.get(fil, "")
+        fil_str += f"""
+ - {fil} : {descr}
+        """
+
+    content_str = f"""
+I have analyzed the repository, and determined that these files need 
+a closer review for this issue.   It will take a couple minutes to 
+analyze further.
+
+Files:
+
+{fil_str}
+"""
+    json.dumps(
         {
             "issue": issue["title"],
             "file_paths": file_paths_to_review,
-            # "file_contents": file_contents_json,
         }
     )
 
@@ -110,6 +135,8 @@ def code_review(event: Event) -> Event:
             ["p", event.public_key],
             ["e", event.id],
             ["R", "claude_files"],
+            ["issue", issue_msg],
+            ["file_paths", file_paths_to_review],
             ["status", "payment_required"],
             ["amount", "1000", invoice],
         ],
