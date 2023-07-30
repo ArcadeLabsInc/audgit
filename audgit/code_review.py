@@ -96,7 +96,3 @@ def code_review(event: Event) -> Event:
     )
 
     yield job_result_event
-
-
-
-print(code_review(Event(content="https://github.com/ArcadeLabsInc/arcade/issues/466")))

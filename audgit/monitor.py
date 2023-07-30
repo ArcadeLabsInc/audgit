@@ -25,21 +25,19 @@ class Monitor:
         self.debug = debug
         self.handlers: dict[str, Callable] = {}
         self.private_key = PrivateKey.from_hex(os.getenv("NOSTR_PRIVKEY"))
+        self.since = time.time() - 3600
 
     def add_handler(self, name, func):
         self.handlers[name] = func
 
     def start(self, once=False):
-        jobs = {}
+        done = set()
 
-        for event in self.enum(filter=[self.get_job_filter(), self.get_reply_filter()]):
-            job_name = get_tag(event, "j")
-            if job_name:
-                jobs[event.id] = event
+        for event in self.enum(filter=[self.get_reply_filter()]):
             status = get_tag(event, "status")
             ref_event = get_tag(event, "e")
             if status and ref_event:
-                setattr(jobs[event.id], "done", True)
+                done.add(event.id)
 
         relay_manager = self._subscribe(close_on_eose=False, filter=self.get_job_filter())
         while True:
@@ -54,7 +52,10 @@ class Monitor:
                     if name not in self.handlers:
                         continue
 
-                    if event.id in jobs and getattr(jobs[event.id], "done", False):
+                    if event.id in done:
+                        continue
+
+                    if event.created_at < self.since:
                         continue
 
                     try:
@@ -107,7 +108,7 @@ class Monitor:
 
     def cli_review(self, issue: str):
         name = "code-review"
-        event = Event(content=issue, tags=[["j", "code_review"]])
+        event = Event(content=issue, tags=[["j", "code-review"]])
         for result in self.handlers[name](event):
             print(result)
 
