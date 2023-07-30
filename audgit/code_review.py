@@ -1,3 +1,4 @@
+import time
 from pynostr.event import Event
 from audgit.claude_call import which_files_claude_call, best_solution_claude_call
 from audgit.descrips import generate_file_descrips
@@ -7,6 +8,8 @@ import json
 import os
 from dotenv import load_dotenv
 import logging
+
+from audgit.lightning import get_callback
 
 log = logging.getLogger("audgit")
 
@@ -25,6 +28,7 @@ headers = {
 
 
 # Generate a new keypair for the demonstration
+
 
 def code_review(event: Event) -> Event:
     log.debug("Got event...")
@@ -49,7 +53,10 @@ def code_review(event: Event) -> Event:
 
     file_paths = get_file_tree(repo_url, local_path)
 
-    files_with_descriptions = generate_file_descrips(file_paths, owner, repo, f"/tmp/repo/{repo}")
+    files_with_descriptions = generate_file_descrips(
+        file_paths, owner, repo, f"/tmp/repo/{repo}"
+    )
+
 
     pruned_descriptions = {k.replace(local_path, '').lstrip("/").lstrip("\\"): v for k, v in files_with_descriptions.items()}
 
@@ -69,6 +76,10 @@ def code_review(event: Event) -> Event:
         }
     )
 
+    ln_callback = get_callback(msats=1000)
+    invoice = ln_callback["pr"]
+    verify_url = ln_callback["verify"]
+
     job_result_event = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
@@ -76,11 +87,23 @@ def code_review(event: Event) -> Event:
             ["p", event.pubkey],
             ["e", event.id],
             ["R", "claude_files"],
-            ["status", "partial"]
-        ]
+            ["status", "payment_required"],
+            ["amount", "1000", invoice],
+        ],
     )
 
     yield job_result_event
+
+    # Wait for the payment to be made by polling against the verify_url
+    while True:
+        res = requests.get(verify_url)
+        if res.status_code != 200:
+            raise Exception(f"Error: API request status {res.status_code}")
+        if res.json()["settled"]:
+            log.debug("Payment received!")
+            break
+        log.debug("Waiting for payment...")
+        time.sleep(3)
 
     final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
@@ -91,8 +114,8 @@ def code_review(event: Event) -> Event:
             ["p", event.pubkey],
             ["e", event.id],
             ["R", "claude_solution"],
-            ["status", "success"]
-        ]
+            ["status", "success"],
+        ],
     )
 
     yield job_result_event

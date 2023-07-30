@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
-load_dotenv("/Users/kody/Documents/github/python/audgit/.env")
+load_dotenv()
 
 # Load the lightning address from an environment variable
 LIGHTNING_ADDRESS = os.getenv("LIGHTNING_ADDRESS")
@@ -24,10 +24,9 @@ def get_callback_url(lnaddr: str):
     return callback
 
 
-def callback(msats: int):
+def get_callback(msats: int):
     c = get_callback_url(LIGHTNING_ADDRESS)
-    res = requests.get(f"{callback}?amount={msats}")
+    res = requests.get(f"{c}?amount={msats}")
     if res.status_code != 200:
         raise Exception(f"Error: API request status {res.status_code}")
     return res.json()
-
