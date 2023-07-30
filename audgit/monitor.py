@@ -38,7 +38,7 @@ class Monitor:
             ref_event = get_tag(event, "e")
             if status and ref_event:
                 log.debug("done: %s (%s)", event.id, status)
-                done.add(event.id)
+                done.add(ref_event)
 
         relay_manager, _sub_id = self._subscribe(filter=self.get_job_filter())
 
