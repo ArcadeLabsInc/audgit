@@ -51,11 +51,12 @@ The file tree for the code to review is below, wrapped in XML tags:
 
 {code}
 
-Respond with only the files you'd like to review as part of the code review in the following format.
+Respond with a list of up to 10 files you'd like to review in order to solve this issue:
 
 [
 '/path/to/file1.xml',
 '/path/to/file2.py',
+...
 ]
 
 {AI_PROMPT}

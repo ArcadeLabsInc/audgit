@@ -51,11 +51,15 @@ def code_review(event: Event) -> Event:
 
     files_with_descriptions = generate_file_descrips(file_paths, owner, repo, f"/tmp/repo/{repo}")
 
+    pruned_descriptions = {k.replace(local_path, ''): v for k, v in files_with_descriptions.items()}
+
     file_paths_to_review = which_files_claude_call(
         issue["title"],
         issue["body"],
-        files_with_descriptions
+        pruned_descriptions
     )
+
+    full_paths = [os.path.join(local_path, fil) for fil in file_paths_to_review]
 
     content_str = json.dumps(
         {
@@ -78,7 +82,7 @@ def code_review(event: Event) -> Event:
 
     yield job_result_event
 
-    final = best_solution_claude_call(issue["title"], issue["body"], file_paths_to_review)
+    final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
     job_result_event = Event(
         kind=65001,  # code review job result

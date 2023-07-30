@@ -39,8 +39,6 @@ def generate_file_descrips(paths, org, name, repo_root):
     log.debug("Generating descriptions for filtered_paths.")
     pierre = ThankYouPierre(org, name, repo_root)
     descriptions = pierre.get_descriptions()
-    descriptions = {k.replace(pierre.local_path, ''): v for k, v in descriptions.items()}
-
     log.debug("description: %s", descriptions)
 
     return descriptions
@@ -108,7 +106,7 @@ class ThankYouPierre():
                 self.num_files = num_files
 
     def load_descriptions(self):
-        save_path = f'embeddings/{self.name}_descriptions.json'
+        save_path = os.path.join(self.tmp_path, f"{self.name}_descriptions.json")
         if not os.path.exists(save_path):
             return None
         with open(save_path, 'rb') as f:
