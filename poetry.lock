@@ -457,7 +457,7 @@ test = ["pytest (>=7.2.0)", "pytest-cov[all]"]
 type = "git"
 url = "https://github.com/earonesty/python-nostr.git"
 reference = "windows-compat"
-resolved_reference = "511154f0f32c60350cc49bd4be9ee7cc508bef6e"
+resolved_reference = "9269942ac67e8474df05be99e395b029f356e180"
 
 [[package]]
 name = "pycparser"
