@@ -128,6 +128,8 @@ class ThankYouPierre():
             if filename in descriptions:
                 continue
             extension = filename.split('.')[-1]
+            if len(code)/3 > 100000:
+                code = code[0:300000]
             prompt = f'File: {filename}\n\nCode:\n\n```{extension}\n{code}```\n\n{description_prompt}\nThis file'
             description = complete(prompt)
             descriptions[filename] = description
