@@ -54,8 +54,8 @@ The file tree for the code to review is below, wrapped in XML tags:
 Respond with a list of up to 10 files you'd like to review in order to solve this issue:
 
 [
-'/path/to/file1.xml',
-'/path/to/file2.py',
+"/path/to/file1.xml",
+"/path/to/file2.py",
 ...
 ]
 
