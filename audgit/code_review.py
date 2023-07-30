@@ -77,6 +77,7 @@ Prepare to be claudited.
             ["issue", issue_msg],
             ["status", "processing"],
             ["amount", "1000", invoice],
+            ["verify", verify_url],
         ],
     )
 
