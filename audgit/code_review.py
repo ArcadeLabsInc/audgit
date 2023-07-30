@@ -7,6 +7,9 @@ import json
 import os
 from dotenv import load_dotenv
 from pynostr.key import PrivateKey
+import logging
+
+log = logging.getLogger("audgit")
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script
 # If your .env file is one directory up, you need to specify the path
@@ -27,7 +30,7 @@ private_key = PrivateKey.from_hex(os.getenv("NOSTR_PRIVKEY"))
 
 
 def code_review(event: Event):
-    print("Got event...")
+    log.debug("Got event...")
     issue_url = event.content
 
     parts = issue_url.split("/")
@@ -42,7 +45,7 @@ def code_review(event: Event):
         raise Exception(f"Error: API request status {response.status_code}")
 
     issue = response.json()
-    print("Got issue...")
+    log.debug("Got issue...")
 
     repo_url = f"https://github.com/{owner}/{repo}.git"
     local_path = f"/tmp/repo/{repo}"  # Define the local path where the repo is cloned
@@ -62,7 +65,7 @@ def code_review(event: Event):
     file_paths_json = json.dumps(file_paths)
     # file_contents_json = json.dumps(file_contents)
 
-    print("Creating event...")
+    log.debug("Creating event...")
     # create the event
     # Convert the dictionary into a JSON string
     content_str = json.dumps(
@@ -76,15 +79,15 @@ def code_review(event: Event):
     event = Event(
         kind=65001,  # code review job result
         content=content_str,  # use the JSON string here
-        tags=[["status", "success"]],  # add a tag to indicate the status of the job
+        tags=[["status", "success"], ["e", event.id], ["p", event.pubkey]],  # add a tag to indicate the status of the job
         pubkey=private_key.public_key.hex(),  # assuming you want the hex value of the public key
     )
-    print("Created event...")
+    log.debug("Created event...")
 
-    print("Signing event...")
+    log.debug("Signing event...")
     # sign event
     event.sign(private_key.hex())
-    print("Signed event: ")# + str(event)
+    log.debug("Signed event: ")# + str(event)
 
     # send event
     return event
