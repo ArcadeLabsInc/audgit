@@ -176,7 +176,8 @@ Some files that are relevant are below wrapped in XML tags:
 
 {code}
 
-Write a response to the issue, using markdown:
+Write a response to the issue, using markdown, don't pretend
+you opened a pr:
 
 {AI_PROMPT}
   """

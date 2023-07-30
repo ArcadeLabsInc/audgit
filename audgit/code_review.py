@@ -108,7 +108,7 @@ Prepare to be claudited.
 
     fil_str = ""
     for fil in file_paths_to_review:
-        descr = files_with_descriptions.get(fil, "")
+        descr = pruned_descriptions.get(fil, "")
         fil_str += f"""
  - {fil} : {descr}
         """
