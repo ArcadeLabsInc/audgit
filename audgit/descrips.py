@@ -4,22 +4,49 @@ import os
 import json
 import tempfile
 
+from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+
 from audgit.get_repo_files import get_file_tree
 
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-def complete(prompt):
-    wompwomp = "WOMPWOMP: " + prompt + " WOMP"
-    return wompwomp
+
+# def complete(prompt):
+#     wompwomp = "WOMPWOMP: " + prompt + " WOMP"
+#     return wompwomp
+
+
+def complete(prompt: str):
+    bigger_prompt = f"""{HUMAN_PROMPT}
+
+{prompt}
+
+{AI_PROMPT}
+  """
+
+    print("------")
+    print(bigger_prompt)
+    print("------")
+
+    anthropic = Anthropic()
+    completion = anthropic.completions.create(
+        model="claude-instant-1", max_tokens_to_sample=3000, prompt=bigger_prompt
+    )
+
+    return completion.completion
 
 
 def generate_file_descrips(paths):
     """what"""
     filtered_paths = filter_filepaths(paths)
     print("Generating descriptions for filtered_paths.")
-    pierre = ThankYouPierre("ArcadeLabsInc", "arcade", "/tmp/repo/arcade")
-    print("Hello pierre.")
+    pierre = ThankYouPierre("ArcadeLabsInc", "audgit", "/tmp/repo/audgit")
     descriptions = pierre.get_descriptions()
+    descriptions = {k.replace(pierre.local_path, ''): v for k, v in descriptions.items()}
+
     print(descriptions)
+
+    return descriptions
 
 
 
@@ -48,7 +75,7 @@ class ThankYouPierre():
         self.dir = repo_dir
 
         self.remote_path = f'{org}/{name}'
-        self.local_path = "/tmp/repo/arcade" # f'{repo_dir}/{name}'
+        self.local_path = "/tmp/repo/audgit" # f'{repo_dir}/{name}'
 
         self.num_files = 345
 
@@ -94,7 +121,7 @@ class ThankYouPierre():
             descriptions = {}
 
         generator = self.walk()
-        description_prompt = 'A short summary in plain English of the above code is:'
+        description_prompt = 'A 1-sentence summary in plain English of the above code, with no other commentary, is:'
         num_files = len(descriptions)
         for filename, root, dirs, code in generator:
             # Skip files that already have descriptions
@@ -102,7 +129,7 @@ class ThankYouPierre():
                 continue
             extension = filename.split('.')[-1]
             prompt = f'File: {filename}\n\nCode:\n\n```{extension}\n{code}```\n\n{description_prompt}\nThis file'
-            description = 'This file ' + complete(prompt)
+            description = complete(prompt)
             descriptions[filename] = description
 
             if save and (num_files % save_every == 0):
@@ -124,7 +151,7 @@ class ThankYouPierre():
 
 
 if __name__ == "__main__":
-    REPO = "arcade"
+    REPO = "audgit"
     repo_url = f"https://github.com/ArcadeLabsInc/{REPO}.git"
     local_path = f"/tmp/repo/{REPO}"  # Define the local path where the repo is cloned
     file_paths = get_file_tree(repo_url, local_path)
