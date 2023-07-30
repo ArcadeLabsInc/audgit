@@ -54,7 +54,6 @@ class Monitor:
                         result = self.handlers[name](event)
                         if result:
                             print("publishing result...")
-                            time.sleep(1)
                             relay_manager.publish_event(result)
                             self.publish_result(result)
                     except Exception as ex:
