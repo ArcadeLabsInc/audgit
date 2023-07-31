@@ -29,6 +29,7 @@ class Executor:
 
 class Monitor:
     def __init__(self, debug: bool):
+        self.stop = False
         self.debug = debug
         self.handlers: dict[str, Callable] = {}
         self.private_key = PrivateKey.from_hex(os.environ["NOSTR_PRIVKEY"])
@@ -39,7 +40,7 @@ class Monitor:
         self.handlers[name] = func
 
     def start(self, once=False):
-        done = set()
+        done: set[str] = set()
 
         for event in self.enum(filter=[self.get_reply_filter()]):
             status = get_tag(event, "status")
@@ -50,7 +51,8 @@ class Monitor:
 
         relay_manager, _sub_id = self._subscribe(filter=self.get_job_filter())
 
-        while True:
+        finished = False
+        while not self.stop and not finished:
             try:
                 while event_msg := relay_manager.message_pool.events.get(timeout=5):
                     event: Event = cast(Event, event_msg.event)
@@ -67,7 +69,7 @@ class Monitor:
                     self.executor.submit(self.handle_event, event, relay_manager)
 
                     if once:
-                        break
+                        finished = True
             except Empty:
                 if once:
                     log.info("no events for --once flag")

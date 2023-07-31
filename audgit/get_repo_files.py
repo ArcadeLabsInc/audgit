@@ -1,8 +1,5 @@
-import requests
-import base64
 import os
 from dotenv import load_dotenv
-from typing import Optional
 import subprocess
 
 # load the .env file. By default, it looks for the .env file in the same directory as the script

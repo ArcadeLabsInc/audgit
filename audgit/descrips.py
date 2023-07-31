@@ -7,7 +7,6 @@ import logging as log
 
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 
-from audgit.get_repo_files import get_file_tree
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
@@ -35,7 +34,7 @@ def complete(prompt: str):
 
 def generate_file_descrips(paths, org, name, repo_root):
     """what"""
-    filtered_paths = filter_filepaths(paths)
+    filter_filepaths(paths)
     log.debug("Generating descriptions for filtered_paths.")
     pierre = ThankYouPierre(org, name, repo_root)
     descriptions = pierre.get_descriptions()
