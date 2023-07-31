@@ -3,10 +3,10 @@
 import os
 import json
 import logging as log
-
+from collections import defaultdict
+from threading import Lock
 
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
-
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
@@ -64,20 +64,25 @@ def filter_filepaths(paths):
     return filtered_paths
 
 
-class ThankYouPierre():
+mutexes = defaultdict(lambda: Lock())
+
+
+class ThankYouPierre:
     extensions = (
-    '.js', '.jsx', '.py', '.json', '.html', '.css', '.scss', '.yml', '.yaml', '.ts', '.tsx', '.ipynb', '.c', '.cc',
-    '.cpp', '.go', '.h', '.hpp', '.java', '.sol', '.sh', '.txt')
-    directory_blacklist = ('build', 'dist', '.github', 'site', 'tests')
+        '.js', '.jsx', '.py', '.json', '.html', '.css', '.scss', '.yml', '.yaml', '.ts', '.tsx', '.ipynb', '.c', '.cc',
+        '.cpp', '.go', '.h', '.hpp', '.java', '.sol', '.sh', '.txt', '.c', '.hpp', '.h', '.pdf', 'docx', '.sh', '.cfg',
+        '.md')
+    directory_blacklist = ('build', 'dist', '.github', 'site', 'tests', "node_modules")
 
     def __init__(self, org, name, local_path):
         self.org = org
-        self.name = name
+        self.canon_name = org + "." + name
 
         self.local_path = local_path
         self.tmp_path = local_path + "/.pierre"
         os.makedirs(self.tmp_path, exist_ok=True)
-        self.num_files = 345
+        self.num_files = 0
+        self.mutex = mutexes[self.canon_name]
 
     def walk(self, max_num_files=1000):
         num_files = 0
@@ -104,7 +109,7 @@ class ThankYouPierre():
                 self.num_files = num_files
 
     def load_descriptions(self):
-        save_path = os.path.join(self.tmp_path, f"{self.name}_descriptions.json")
+        save_path = os.path.join(self.tmp_path, f"{self.canon_name}_descriptions.json")
         if not os.path.exists(save_path):
             return None
         with open(save_path, 'rb') as f:
@@ -112,45 +117,46 @@ class ThankYouPierre():
         return data
 
     def get_descriptions(self, save=True, save_every=10):
-        descriptions = self.load_descriptions()
-        if descriptions is not None and len(descriptions) == self.num_files:
-            return descriptions
+        with self.mutex:
+            descriptions = self.load_descriptions()
+            if descriptions is not None and len(descriptions) == self.num_files:
+                return descriptions
 
-        if descriptions is None:
-            descriptions = {}
+            if descriptions is None:
+                descriptions = {}
 
-        generator = self.walk()
-        description_prompt = 'A 1-sentence summary in plain English of the above code, with no other commentary, is:'
-        num_files = len(descriptions)
-        for filename, root, dirs, code in generator:
-            # Skip files that already have descriptions
-            if filename in descriptions:
-                continue
-            extension = filename.split('.')[-1]
-            if len(code)/3 > 100000:
-                code = code[0:300000]
-            prompt = f'File: {filename}\n\nCode:\n\n```{extension}\n{code}```\n\n{description_prompt}\nThis file'
-            try:
-                description = complete(prompt)
-            except Exception:
-                log.exception("Error doing completion for :%s", filename)
-                continue
-            descriptions[filename] = description
+            generator = self.walk()
+            description_prompt = 'A 1-sentence summary in plain English of the above code, with no other commentary, is:'
+            num_files = len(descriptions)
+            for filename, root, dirs, code in generator:
+                # Skip files that already have descriptions
+                if filename in descriptions:
+                    continue
+                extension = filename.split('.')[-1]
+                if len(code) / 3 > 100000:
+                    code = code[0:300000]
+                prompt = f'File: {filename}\n\nCode:\n\n```{extension}\n{code}```\n\n{description_prompt}\nThis file'
+                try:
+                    description = complete(prompt)
+                except Exception:
+                    log.exception("Error doing completion for :%s", filename)
+                    continue
+                descriptions[filename] = description
 
-            log.debug(f"{filename}: {description}")
+                log.debug(f"{filename}: {description}")
 
-            if save and (num_files % save_every == 0):
-                log.debug(f'Saving descriptions for {num_files} files')
+                if save and (num_files % save_every == 0):
+                    log.debug(f'Saving descriptions for {num_files} files')
+                    self.save_descriptions(descriptions)
+
+                num_files += 1
+
+            if save:
                 self.save_descriptions(descriptions)
 
-            num_files += 1
-
-        if save:
-            self.save_descriptions(descriptions)
-
-        return descriptions
+            return descriptions
 
     def save_descriptions(self, descriptions):
-        save_path = os.path.join(self.tmp_path, f"{self.name}_descriptions.json")
+        save_path = os.path.join(self.tmp_path, f"{self.canon_name}_descriptions.json")
         with open(save_path, 'w') as f:
             json.dump(descriptions, f)

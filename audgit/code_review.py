@@ -1,3 +1,5 @@
+import time
+
 from nostr.event import Event
 from audgit.claude_call import which_files_claude_call, best_solution_claude_call
 from audgit.descrips import generate_file_descrips
@@ -54,8 +56,12 @@ def code_review(event: Event) -> Event:
         }
     )
 
-    ln_callback = get_callback(msats=1000)
+    ln_callback = get_callback(msats=10000000)
+
     invoice = ln_callback["pr"]
+
+    log.info(ln_callback)
+
     verify_url = ln_callback["verify"]
 
     ack_event = Event(
@@ -76,7 +82,7 @@ Prepare to be claudited.
             ["R", "issue_ack"],
             ["issue", issue_msg],
             ["status", "processing"],
-            ["amount", "1000", invoice],
+            ["amount", "10000000", invoice],
             ["verify_url", verify_url],
         ],
     )
@@ -132,7 +138,7 @@ Files:
             ["issue", issue_msg],
             ["file_paths", json.dumps(file_paths_to_review)],
             ["status", "payment_required"],
-            ["amount", "1000", invoice],
+            ["amount", "10000000", invoice],
             ["verify_url", verify_url],
         ],
     )
@@ -140,15 +146,15 @@ Files:
     yield job_result_tmp
 
     # Wait for the payment to be made by polling against the verify_url
-    #    while True:
-    #        res = requests.get(verify_url)
-    #        if res.status_code != 200:
-    #            raise Exception(f"Error: API request status {res.status_code}")
-    #        if res.json()["settled"]:
-    #            log.debug("Payment received!")
-    #            break
-    #        log.debug("Waiting for payment...")
-    #        time.sleep(3)
+    while True:
+        res = requests.get(verify_url)
+        if res.status_code != 200:
+            raise Exception(f"Error: payment verification failure  {res.status_code}")
+        if res.json()["settled"]:
+            log.debug("Payment received!")
+            break
+        log.debug("Waiting for payment...")
+        time.sleep(3)
 
     final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
