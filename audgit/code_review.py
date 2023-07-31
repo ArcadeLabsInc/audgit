@@ -146,15 +146,22 @@ Files:
     yield job_result_tmp
 
     # Wait for the payment to be made by polling against the verify_url
-    while True:
+
+    got_payment = False
+    done_waiting = time.monotonic() + 300
+    while time.monotonic() < done_waiting:
         res = requests.get(verify_url)
         if res.status_code != 200:
             raise Exception(f"Error: payment verification failure  {res.status_code}")
         if res.json()["settled"]:
             log.debug("Payment received!")
+            got_payment = True
             break
         log.debug("Waiting for payment...")
         time.sleep(3)
+
+    if not got_payment:
+        raise Exception(f"Error: payment request timed out")
 
     final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
