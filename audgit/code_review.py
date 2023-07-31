@@ -161,7 +161,18 @@ Files:
         time.sleep(3)
 
     if not got_payment:
-        raise Exception(f"Error: payment request timed out")
+        pay_fail_event = Event(
+            kind=65001,  # code review job result
+            content="Payment failed.  Try again later.",  # use the JSON string here
+            tags=[
+                ["p", event.public_key],
+                ["e", event.id],
+                ["R", "claude_solution"],
+                ["status", "error"],
+            ]
+        )
+        yield pay_fail_event
+        return
 
     final = best_solution_claude_call(issue["title"], issue["body"], full_paths)
 
