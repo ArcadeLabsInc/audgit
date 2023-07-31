@@ -128,7 +128,7 @@ This is a set of suggested responses coming from different developers:
 
 {code}
 
-Respond with a unified solution and course of action in markdown.
+Respond with a long, comprehensive unified solution and course of action in markdown.
 
 {AI_PROMPT}
     """
@@ -160,7 +160,12 @@ Issue Body:
 {issue_body}
   """
 
-    code = f"<CodeToReview>{chunk}</CodeToReview>"
+    code = "<CodeToReview>"
+
+    for k, v in chunk.items():
+        code += f"<FileName>{k}</FileName><FileContents>{v}</FileContents>"
+
+    code += "</CodeToReview>"
 
     prompt = f"""{HUMAN_PROMPT}
 
@@ -176,8 +181,8 @@ Some files that are relevant are below wrapped in XML tags:
 
 {code}
 
-Write a response to the issue, using markdown, don't pretend
-you opened a pr:
+Write a long, thorough response to the issue, using markdown, don't pretend
+you opened a pr, instead include exact code changes and specifics if possible.:
 
 {AI_PROMPT}
   """

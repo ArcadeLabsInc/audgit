@@ -128,6 +128,7 @@ class Monitor:
     def cli_review(self, issue: str):
         name = "code-review"
         event = Event(content=issue, tags=[["j", "code-review"]])
+        event.evade_payment = True
         for result in self.handlers[name](event):
             print(result)
 
